@@ -1,6 +1,6 @@
 # Resume Auto Delivery
 
-一个用于“简历自动命名 + 邮件投递 + 台账记录”的工具。
+一个用于“简历 PDF 自动命名 + 邮件投递 + 台账记录”的工具。
 
 ## 适用人群
 - 不懂代码也可以使用
@@ -20,7 +20,6 @@ cd /Users/<你的用户名>/Documents/webagent
 ## 1. 安装依赖（只需一次）
 ```bash
 npm install -g @tencent-qqmail/agently-cli
-brew install tectonic
 ```
 
 ## 2. 绑定 Agent 邮箱（只需一次）
