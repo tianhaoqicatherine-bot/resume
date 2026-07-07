@@ -10,27 +10,35 @@
 ## 第一步（必须先完成）：收集用户输入
 在执行任何自动化步骤前，必须先确认并收集以下信息；任一缺失则停止执行并提示补充。
 
+### 通用格式规则（全部字段都要遵守）
+- 编码：UTF-8。
+- 时间：统一使用绝对日期，避免“下周/尽快/ASAP”这类相对描述。
+- 路径：必须是绝对路径（例如 `/Users/xxx/...`），不接受相对路径。
+- 布尔值：仅允许 JSON 布尔值 `true` 或 `false`。
+
 ### A. 候选人基础信息（必填）
-- `candidate_name`：姓名（用于命名）
-- `school`：学校（用于命名）
-- `onboard_time`：到岗时间（用于命名）
-- `max_intern_duration`：最长实习时间（用于命名）
+- `candidate_name`：姓名（用于命名），字符串，长度 2-30。
+- `school`：学校（用于命名），字符串，长度 2-100。
+- `onboard_time`：到岗时间（用于命名），建议格式 `YYYY.MM` 或 `YYYY-MM`（如 `2026.08`）。
+- `max_intern_duration`：最长实习时间（用于命名），建议格式 `N个月` 或 `N月`（如 `6个月`）。
 
 ### B. 简历源文件（必填）
-- `resume_tex_path`：LaTeX 主文件绝对路径（例如 `/abs/path/resume.tex`）
+- `resume_tex_path`：LaTeX 主文件绝对路径（例如 `/abs/path/resume.tex`），必须以 `.tex` 结尾且文件存在。
 - 若仅有 PDF，需要先执行“PDF 重建为 LaTeX”步骤，得到可编辑 tex 后再继续。
 
 ### C. 目标岗位信息（必填）
-- `company`：公司名
-- `position`：岗位名
-- `jd_text_or_link`：JD 文本或链接
-- `recipient_email`：投递邮箱
-- `subject_rule`：邮件标题规则（若 JD 指定）
-- `filename_rule`：附件命名规则（默认 `姓名-学校-到岗时间-最长实习时间.pdf`）
+- `company`：公司名，字符串，长度 2-100。
+- `position`：岗位名，字符串，长度 2-100。
+- `jd_text_or_link`：JD 文本或链接；若为链接需以 `http://` 或 `https://` 开头。
+- `recipient_email`：投递邮箱，需符合邮箱格式（如 `hr@company.com`）。
+- `subject_rule`：邮件标题规则（若 JD 指定），字符串，长度 1-200。
+- `filename_rule`：附件命名规则，默认 `姓名-学校-到岗时间-最长实习时间.pdf`。
+  - 允许占位符：`姓名`、`学校`、`到岗时间`、`最长实习时间`。
+  - 最终文件名非法字符 `\\ / : * ? " < > |` 会自动替换为 `-`。
 
 ### D. 发信与记录配置（必填）
-- `sender_alias`：发件邮箱别名（默认主别名）
-- `log_csv_path`：投递记录 CSV 路径（例如 `/abs/path/data/applications.csv`）
+- `sender_alias`：发件邮箱别名（默认主别名），需符合邮箱格式（如 `xxx@agent.qq.com`）。
+- `log_csv_path`：投递记录 CSV 绝对路径（例如 `/abs/path/data/applications.csv`），必须以 `.csv` 结尾。
 
 ### E. 用户确认项（必填）
 - 是否允许 AI 根据 JD 改写简历措辞（仅优化表达，不得虚构经历）：`allow_rewrite=true/false`

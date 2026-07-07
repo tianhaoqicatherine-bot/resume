@@ -15,9 +15,65 @@ REQUIRED_FIELDS = [
     "recipient_email", "filename_rule", "log_csv_path", "allow_rewrite", "auto_send"
 ]
 
+EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+ONBOARD_TIME_REGEX = re.compile(r"^\d{4}[.-]\d{2}$")
+MAX_DURATION_REGEX = re.compile(r"^\d+\s*(个月|月)$")
+URL_REGEX = re.compile(r"^https?://", re.IGNORECASE)
+
 def validate_inputs(cfg):
     missing = [k for k in REQUIRED_FIELDS if k not in cfg or cfg[k] in (None, "")]
-    return missing
+    if missing:
+        return {"missing_fields": missing, "format_errors": []}
+
+    errors = []
+
+    if not (2 <= len(str(cfg["candidate_name"])) <= 30):
+        errors.append("candidate_name length must be 2-30")
+    if not (2 <= len(str(cfg["school"])) <= 100):
+        errors.append("school length must be 2-100")
+    if not ONBOARD_TIME_REGEX.match(str(cfg["onboard_time"])):
+        errors.append("onboard_time format must be YYYY.MM or YYYY-MM")
+    if not MAX_DURATION_REGEX.match(str(cfg["max_intern_duration"])):
+        errors.append("max_intern_duration format must be like 6个月 or 6月")
+
+    resume_tex_path = str(cfg["resume_tex_path"])
+    if not os.path.isabs(resume_tex_path):
+        errors.append("resume_tex_path must be absolute path")
+    if not resume_tex_path.endswith(".tex"):
+        errors.append("resume_tex_path must end with .tex")
+
+    if not (2 <= len(str(cfg["company"])) <= 100):
+        errors.append("company length must be 2-100")
+    if not (2 <= len(str(cfg["position"])) <= 100):
+        errors.append("position length must be 2-100")
+
+    jd_value = str(cfg["jd_text_or_link"]).strip()
+    if jd_value.startswith("http") and not URL_REGEX.match(jd_value):
+        errors.append("jd_text_or_link URL must start with http:// or https://")
+
+    if not EMAIL_REGEX.match(str(cfg["recipient_email"])):
+        errors.append("recipient_email is invalid")
+
+    subject_rule = cfg.get("subject_rule")
+    if subject_rule is not None and len(str(subject_rule)) > 200:
+        errors.append("subject_rule length must be <= 200")
+
+    sender_alias = str(cfg.get("sender_alias", "")).strip()
+    if sender_alias and not EMAIL_REGEX.match(sender_alias):
+        errors.append("sender_alias is invalid")
+
+    log_csv_path = str(cfg["log_csv_path"])
+    if not os.path.isabs(log_csv_path):
+        errors.append("log_csv_path must be absolute path")
+    if not log_csv_path.endswith(".csv"):
+        errors.append("log_csv_path must end with .csv")
+
+    if not isinstance(cfg.get("allow_rewrite"), bool):
+        errors.append("allow_rewrite must be boolean")
+    if not isinstance(cfg.get("auto_send"), bool):
+        errors.append("auto_send must be boolean")
+
+    return {"missing_fields": [], "format_errors": errors}
 
 def safe_filename(name: str) -> str:
     return re.sub(r'[\\/:*?"<>|]+', '-', name).strip()
@@ -97,9 +153,9 @@ def main():
     cfg_path = Path(sys.argv[1])
     cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
 
-    missing = validate_inputs(cfg)
-    if missing:
-        print(json.dumps({"ok": False, "missing_fields": missing}, ensure_ascii=False, indent=2))
+    validation = validate_inputs(cfg)
+    if validation["missing_fields"] or validation["format_errors"]:
+        print(json.dumps({"ok": False, **validation}, ensure_ascii=False, indent=2))
         sys.exit(2)
 
     tex_path = Path(cfg["resume_tex_path"])
