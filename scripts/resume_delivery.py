@@ -19,6 +19,7 @@ EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 ONBOARD_TIME_REGEX = re.compile(r"^\d{4}[.-]\d{2}$")
 MAX_DURATION_REGEX = re.compile(r"^\d+\s*(个月|月)$")
 URL_REGEX = re.compile(r"^https?://", re.IGNORECASE)
+GARBLED_PATTERN = re.compile(r"[�□◇◆◊�]")
 
 def validate_inputs(cfg):
     missing = [k for k in REQUIRED_FIELDS if k not in cfg or cfg[k] in (None, "")]
@@ -97,6 +98,11 @@ def compile_pdf(tex_path: Path):
         raise FileNotFoundError(f"PDF not found after compile: {pdf}")
     return pdf
 
+def detect_possible_garbled_text(tex_path: Path):
+    content = tex_path.read_text(encoding="utf-8", errors="ignore")
+    suspicious = GARBLED_PATTERN.findall(content)
+    return len(suspicious)
+
 def generate_mail(cfg):
     subject = cfg.get("subject_rule") or f"应聘-{cfg['candidate_name']}-{cfg['position']}"
     body = (
@@ -110,17 +116,23 @@ def generate_mail(cfg):
     return subject, body
 
 def send_mail(cfg, subject, body, attachment_path: Path):
+    attachment_rel = attachment_path.name
     cmd = [
         "agently-cli", "message", "+send",
         "--to", cfg["recipient_email"],
         "--subject", subject,
         "--body", body,
-        "--attachment", str(attachment_path)
+        "--attachment", attachment_rel
     ]
     if not cfg.get("auto_send", False):
-        return {"sent": False, "command": " ".join(cmd)}
-    out = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    return {"sent": True, "output": out.stdout.strip()}
+        return {
+            "sent": False,
+            "reason": "await_user_review",
+            "command": " ".join(cmd),
+            "attachment_preview_path": str(attachment_path)
+        }
+    out = subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=str(attachment_path.parent))
+    return {"sent": True, "output": out.stdout.strip(), "attachment_preview_path": str(attachment_path)}
 
 def append_log(cfg, subject, attachment_path: Path, send_result):
     log_path = Path(cfg["log_csv_path"])
@@ -170,6 +182,7 @@ def main():
     subject, body = generate_mail(cfg)
     send_result = send_mail(cfg, subject, body, output_pdf)
     row_id = append_log(cfg, subject, output_pdf, send_result)
+    suspicious_count = detect_possible_garbled_text(tex_path)
 
     result = {
         "ok": True,
@@ -178,7 +191,14 @@ def main():
         "mail_subject": subject,
         "mail_body": body,
         "send_result": send_result,
-        "log_row_id": row_id
+        "log_row_id": row_id,
+        "review_required": True,
+        "review_checklist": [
+            "请先打开 PDF 检查是否有乱码、错字、断行异常",
+            "请确认附件命名与 JD 要求一致",
+            "请确认邮件主题与正文内容无误"
+        ],
+        "possible_garbled_token_count": suspicious_count
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

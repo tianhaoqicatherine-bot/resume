@@ -52,7 +52,14 @@
    python3 scripts/resume_delivery.py templates/user-input-template.json
    ```
 
-3. 输出：
+> 默认建议将 `auto_send` 设为 `false`，先人工预览 PDF。
+
+3. 发送前人工确认（必须）
+- 打开生成的 PDF 检查：乱码、断行、错字、命名。
+- 确认邮件主题与正文。
+- 确认无误后再执行发送命令（脚本输出中会提供）。
+
+4. 输出：
    - 编译后的 PDF（按 `filename_rule` 命名）
    - 邮件主题与正文
    - 发送结果（或草稿命令）
