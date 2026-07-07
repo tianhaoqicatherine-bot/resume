@@ -11,8 +11,8 @@ from pathlib import Path
 
 REQUIRED_FIELDS = [
     "candidate_name", "school", "onboard_time", "max_intern_duration",
-    "resume_tex_path", "company", "position", "jd_text_or_link",
-    "recipient_email", "filename_rule", "log_csv_path", "allow_rewrite", "auto_send"
+    "company", "position", "jd_text_or_link", "recipient_email",
+    "filename_rule", "log_csv_path", "allow_rewrite", "auto_send"
 ]
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -21,10 +21,22 @@ MAX_DURATION_REGEX = re.compile(r"^\d+\s*(个月|月)$")
 URL_REGEX = re.compile(r"^https?://", re.IGNORECASE)
 GARBLED_PATTERN = re.compile(r"[�□◇◆◊�]")
 
+
 def validate_inputs(cfg):
     missing = [k for k in REQUIRED_FIELDS if k not in cfg or cfg[k] in (None, "")]
+
+    source_mode = cfg.get("source_mode", "latest_pdf_in_dir")
+    if source_mode == "latest_pdf_in_dir":
+        if not cfg.get("source_dir"):
+            missing.append("source_dir")
+    elif source_mode == "explicit_file":
+        if not cfg.get("source_file"):
+            missing.append("source_file")
+    else:
+        missing.append("source_mode")
+
     if missing:
-        return {"missing_fields": missing, "format_errors": []}
+        return {"missing_fields": sorted(set(missing)), "format_errors": []}
 
     errors = []
 
@@ -37,11 +49,16 @@ def validate_inputs(cfg):
     if not MAX_DURATION_REGEX.match(str(cfg["max_intern_duration"])):
         errors.append("max_intern_duration format must be like 6个月 or 6月")
 
-    resume_tex_path = str(cfg["resume_tex_path"])
-    if not os.path.isabs(resume_tex_path):
-        errors.append("resume_tex_path must be absolute path")
-    if not resume_tex_path.endswith(".tex"):
-        errors.append("resume_tex_path must end with .tex")
+    if source_mode == "latest_pdf_in_dir":
+        source_dir = str(cfg["source_dir"])
+        if not os.path.isabs(source_dir):
+            errors.append("source_dir must be absolute path")
+    if source_mode == "explicit_file":
+        source_file = str(cfg["source_file"])
+        if not os.path.isabs(source_file):
+            errors.append("source_file must be absolute path")
+        if not source_file.endswith(".pdf"):
+            errors.append("source_file must end with .pdf")
 
     if not (2 <= len(str(cfg["company"])) <= 100):
         errors.append("company length must be 2-100")
@@ -76,32 +93,49 @@ def validate_inputs(cfg):
 
     return {"missing_fields": [], "format_errors": errors}
 
+
 def safe_filename(name: str) -> str:
     return re.sub(r'[\\/:*?"<>|]+', '-', name).strip()
 
+
 def render_filename(cfg):
     filename = cfg.get("filename_rule", "姓名-学校-到岗时间-最长实习时间.pdf")
-    filename = filename.replace("姓名", cfg["candidate_name"])\
-                       .replace("学校", cfg["school"])\
-                       .replace("到岗时间", cfg["onboard_time"])\
-                       .replace("最长实习时间", cfg["max_intern_duration"])
+    filename = filename.replace("姓名", cfg["candidate_name"]) \
+        .replace("学校", cfg["school"]) \
+        .replace("到岗时间", cfg["onboard_time"]) \
+        .replace("最长实习时间", cfg["max_intern_duration"])
     if not filename.endswith('.pdf'):
         filename += '.pdf'
     return safe_filename(filename)
 
-def compile_pdf(tex_path: Path):
-    cwd = tex_path.parent
-    cmd = ["tectonic", tex_path.name]
-    subprocess.run(cmd, cwd=cwd, check=True)
-    pdf = cwd / (tex_path.stem + ".pdf")
-    if not pdf.exists():
-        raise FileNotFoundError(f"PDF not found after compile: {pdf}")
-    return pdf
 
-def detect_possible_garbled_text(tex_path: Path):
-    content = tex_path.read_text(encoding="utf-8", errors="ignore")
-    suspicious = GARBLED_PATTERN.findall(content)
-    return len(suspicious)
+def pick_latest_pdf(source_dir: Path) -> Path:
+    if not source_dir.exists() or not source_dir.is_dir():
+        raise FileNotFoundError(f"source_dir not found or not a directory: {source_dir}")
+    pdfs = [p for p in source_dir.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"]
+    if not pdfs:
+        raise FileNotFoundError(f"no PDF files found in source_dir: {source_dir}")
+    return max(pdfs, key=lambda p: p.stat().st_mtime)
+
+
+def resolve_source_pdf(cfg):
+    source_mode = cfg.get("source_mode", "latest_pdf_in_dir")
+    if source_mode == "latest_pdf_in_dir":
+        return pick_latest_pdf(Path(cfg["source_dir"]))
+    source_file = Path(cfg["source_file"])
+    if not source_file.exists():
+        raise FileNotFoundError(f"source_file not found: {source_file}")
+    return source_file
+
+
+def detect_possible_garbled_text(file_path: Path):
+    try:
+        text = file_path.read_text(encoding="utf-8", errors="ignore")
+        suspicious = GARBLED_PATTERN.findall(text)
+        return len(suspicious)
+    except Exception:
+        return 0
+
 
 def generate_mail(cfg):
     subject = cfg.get("subject_rule") or f"应聘-{cfg['candidate_name']}-{cfg['position']}"
@@ -114,6 +148,7 @@ def generate_mail(cfg):
         f"{cfg['candidate_name']}"
     )
     return subject, body
+
 
 def send_mail(cfg, subject, body, attachment_path: Path):
     attachment_rel = attachment_path.name
@@ -134,7 +169,8 @@ def send_mail(cfg, subject, body, attachment_path: Path):
     out = subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=str(attachment_path.parent))
     return {"sent": True, "output": out.stdout.strip(), "attachment_preview_path": str(attachment_path)}
 
-def append_log(cfg, subject, attachment_path: Path, send_result):
+
+def append_log(cfg, subject, attachment_path: Path, send_result, source_pdf: Path):
     log_path = Path(cfg["log_csv_path"])
     log_path.parent.mkdir(parents=True, exist_ok=True)
     exists = log_path.exists()
@@ -146,6 +182,7 @@ def append_log(cfg, subject, attachment_path: Path, send_result):
         "position": cfg["position"],
         "recipient_email": cfg["recipient_email"],
         "candidate_name": cfg["candidate_name"],
+        "source_pdf": str(source_pdf),
         "attachment": str(attachment_path),
         "subject": subject,
         "status": "sent" if send_result.get("sent") else "draft",
@@ -156,6 +193,7 @@ def append_log(cfg, subject, attachment_path: Path, send_result):
             writer.writeheader()
         writer.writerow(row)
     return row_id
+
 
 def main():
     if len(sys.argv) != 2:
@@ -170,23 +208,22 @@ def main():
         print(json.dumps({"ok": False, **validation}, ensure_ascii=False, indent=2))
         sys.exit(2)
 
-    tex_path = Path(cfg["resume_tex_path"])
-    if not tex_path.exists():
-        raise FileNotFoundError(f"resume_tex_path not found: {tex_path}")
+    source_pdf = resolve_source_pdf(cfg)
 
-    built_pdf = compile_pdf(tex_path)
     output_name = render_filename(cfg)
-    output_pdf = tex_path.parent / output_name
-    shutil.copy2(built_pdf, output_pdf)
+    output_dir = Path(cfg.get("output_dir", str(source_pdf.parent)))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_pdf = output_dir / output_name
+    shutil.copy2(source_pdf, output_pdf)
 
     subject, body = generate_mail(cfg)
     send_result = send_mail(cfg, subject, body, output_pdf)
-    row_id = append_log(cfg, subject, output_pdf, send_result)
-    suspicious_count = detect_possible_garbled_text(tex_path)
+    row_id = append_log(cfg, subject, output_pdf, send_result, source_pdf)
+    suspicious_count = detect_possible_garbled_text(source_pdf)
 
     result = {
         "ok": True,
-        "tailored_tex_path": str(tex_path),
+        "source_pdf_path": str(source_pdf),
         "tailored_pdf_path": str(output_pdf),
         "mail_subject": subject,
         "mail_body": body,
@@ -201,6 +238,7 @@ def main():
         "possible_garbled_token_count": suspicious_count
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
 
 if __name__ == "__main__":
     main()

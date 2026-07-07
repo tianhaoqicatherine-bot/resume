@@ -1,9 +1,10 @@
 {
+  "source_mode": "latest_pdf_in_dir",
+  "source_dir": "/Users/tianhaoqi.1/Documents/webagent/resume",
   "candidate_name": "田昊琦",
   "school": "浙江大学",
   "onboard_time": "2026.08",
   "max_intern_duration": "6个月",
-  "resume_tex_path": "/Users/tianhaoqi.1/Documents/webagent/resume/resume.tex",
   "company": "示例公司",
   "position": "产品经理实习生",
   "jd_text_or_link": "请粘贴JD文本或链接",
@@ -12,6 +13,6 @@
   "filename_rule": "姓名-学校-到岗时间-最长实习时间.pdf",
   "sender_alias": "tianhaoqi@agent.qq.com",
   "log_csv_path": "/Users/tianhaoqi.1/Documents/webagent/data/applications.csv",
-  "allow_rewrite": true,
+  "allow_rewrite": false,
   "auto_send": false
 }

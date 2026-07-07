@@ -1,0 +1,18 @@
+{
+  "source_mode": "latest_pdf_in_dir",
+  "source_dir": "/Users/tianhaoqi.1/Documents/webagent/resume",
+  "candidate_name": "桃子",
+  "school": "浙江大学大一",
+  "onboard_time": "2026.07",
+  "max_intern_duration": "4个月",
+  "company": "阿里巴巴国际电商集团",
+  "position": "战略部实习生",
+  "jd_text_or_link": "阿里巴巴国际电商集团-战略部实习生招聘，杭州西溪园区，要求7月初入职，实习4个月以上，每周线下至少4天。",
+  "recipient_email": "1336215945@qq.com",
+  "subject_rule": "桃子-浙江大学大一-4个月-11111111111",
+  "filename_rule": "姓名-学校-最长实习时间-11111111111.pdf",
+  "sender_alias": "tianhaoqi@agent.qq.com",
+  "log_csv_path": "/Users/tianhaoqi.1/Documents/webagent/data/applications.csv",
+  "allow_rewrite": false,
+  "auto_send": false
+}
