@@ -64,6 +64,9 @@ def validate_inputs(cfg):
         errors.append("company length must be 2-100")
     if not (2 <= len(str(cfg["position"])) <= 100):
         errors.append("position length must be 2-100")
+    base_city = str(cfg.get("base_city", "")).strip()
+    if base_city and len(base_city) > 100:
+        errors.append("base_city length must be <= 100")
 
     jd_value = str(cfg["jd_text_or_link"]).strip()
     if jd_value.startswith("http") and not URL_REGEX.match(jd_value):
@@ -177,12 +180,15 @@ def append_log(cfg, subject, attachment_path: Path, send_result, source_pdf: Pat
     row_id = datetime.now().strftime("%Y%m%d%H%M%S")
     row = {
         "row_id": row_id,
-        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "delivery_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "company": cfg["company"],
         "position": cfg["position"],
+        "base_city": cfg.get("base_city", ""),
+        "jd_text_or_link": cfg["jd_text_or_link"],
         "recipient_email": cfg["recipient_email"],
         "candidate_name": cfg["candidate_name"],
         "source_pdf": str(source_pdf),
+        "resume_filename": attachment_path.name,
         "attachment": str(attachment_path),
         "subject": subject,
         "status": "sent" if send_result.get("sent") else "draft",

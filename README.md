@@ -24,24 +24,34 @@
    brew install tectonic
    ```
 
-## 必填输入（格式要求）
+## 你需要先准备什么（先看这个）
 配置文件参考：`templates/user-input-template.json`
 
-- `candidate_name`: 字符串，长度 2-30
-- `school`: 字符串，长度 2-100
+### 1) 简历文件来源（必填，二选一）
+- 方式 A（推荐）：固定文件夹自动取最新 PDF
+  - `source_mode`: `latest_pdf_in_dir`
+  - `source_dir`: 简历文件夹绝对路径（例如 `/Users/xxx/resume`）
+- 方式 B：手动指定某个 PDF
+  - `source_mode`: `explicit_file`
+  - `source_file`: 简历 PDF 绝对路径（例如 `/Users/xxx/resume/CV.pdf`）
+
+### 2) 投递信息（必填）
+- `candidate_name`: 姓名（如 `桃子`）
+- `school`: 学校/学校年级（如 `浙江大学大一`）
 - `onboard_time`: `YYYY.MM` 或 `YYYY-MM`（如 `2026.08`）
 - `max_intern_duration`: 如 `6个月` 或 `6月`
-- `resume_tex_path`: 绝对路径，且以 `.tex` 结尾
-- `company`: 字符串，长度 2-100
-- `position`: 字符串，长度 2-100
+- `company`: 公司名（如 `阿里巴巴国际电商集团`）
+- `position`: 岗位名（如 `战略部实习生`）
 - `jd_text_or_link`: JD 文本，或以 `http://` / `https://` 开头的链接
-- `recipient_email`: 合法邮箱
-- `subject_rule`: 可选，长度 <= 200
-- `filename_rule`: 默认 `姓名-学校-到岗时间-最长实习时间.pdf`
-- `sender_alias`: 可选，若填写需是合法邮箱
-- `log_csv_path`: 绝对路径，且以 `.csv` 结尾
+- `recipient_email`: 投递邮箱（合法邮箱）
+- `filename_rule`: 附件命名规则（默认 `姓名-学校-到岗时间-最长实习时间.pdf`）
+- `subject_rule`: 邮件标题规则（可选，长度 <= 200）
+- `log_csv_path`: 投递记录 CSV 绝对路径（以 `.csv` 结尾）
 - `allow_rewrite`: `true` / `false`
 - `auto_send`: `true` / `false`
+
+### 3) 可选信息
+- `sender_alias`: 发件别名（若填写需为合法邮箱）
 
 ## 快速开始
 1. 准备配置文件（可复制模板并修改）：

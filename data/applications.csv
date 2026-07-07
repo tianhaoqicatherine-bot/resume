@@ -1,2 +1,6 @@
 row_id,timestamp,company,position,recipient_email,candidate_name,attachment,subject,status
 20260707175836,2026-07-07T17:58:36,示例公司,产品经理实习生,hr@example.com,田昊琦,/Users/tianhaoqi.1/Documents/webagent/resume/田昊琦-浙江大学-2026年8月-6个月.pdf,应聘-姓名-岗位,draft
+20260707180119,2026-07-07T18:01:19,示例公司,产品经理实习生,hr@example.com,田昊琦,/Users/tianhaoqi.1/Documents/webagent/resume/田昊琦-浙江大学-2026.08-6个月.pdf,应聘-姓名-岗位,draft
+20260707181049,2026-07-07T18:10:49,阿里巴巴国际电商集团,战略部实习生,1336215945@qq.com,桃子,/Users/tianhaoqi.1/Documents/webagent/resume/桃子-浙江大学大一-4个月-11111111111.pdf,桃子-浙江大学大一-4个月-11111111111,sent
+20260707181801,2026-07-07T18:18:01,阿里巴巴国际电商集团,战略部实习生,1336215945@qq.com,桃子,/Users/tianhaoqi.1/Documents/webagent/resume/resume.pdf,/Users/tianhaoqi.1/Documents/webagent/resume/桃子-浙江大学大一-4个月-11111111111.pdf,桃子-浙江大学大一-4个月-11111111111,draft
+20260707182302,2026-07-07 18:23:02,阿里巴巴国际电商集团,战略部实习生,杭州阿里巴巴西溪园区,阿里巴巴国际电商集团-战略部实习生招聘，杭州西溪园区，要求7月初入职，实习4个月以上，每周线下至少4天。,1336215945@qq.com,桃子,/Users/tianhaoqi.1/Documents/webagent/resume/resume.pdf,桃子-浙江大学大一-4个月-11111111111.pdf,/Users/tianhaoqi.1/Documents/webagent/resume/桃子-浙江大学大一-4个月-11111111111.pdf,桃子-浙江大学大一-4个月-11111111111,draft
